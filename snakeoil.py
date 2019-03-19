@@ -58,68 +58,69 @@ import getopt
 PI= 3.14159265359
 
 # Initialize help messages
-ophelp=  'Options:\n'
-ophelp+= ' --host, -H <host>    TORCS server host. [localhost]\n'
-ophelp+= ' --port, -p <port>    TORCS port. [3001]\n'
-ophelp+= ' --id, -i <id>        ID for server. [SCR]\n'
-ophelp+= ' --steps, -m <#>      Maximum simulation steps. 1 sec ~ 50 steps. [100000]\n'
-ophelp+= ' --episodes, -e <#>   Maximum learning episodes. [1]\n'
-ophelp+= ' --track, -t <track>  Your name for this track. Used for learning. [unknown]\n'
-ophelp+= ' --stage, -s <#>      0=warm up, 1=qualifying, 2=race, 3=unknown. [3]\n'
-ophelp+= ' --debug, -d          Output full telemetry.\n'
-ophelp+= ' --help, -h           Show this help.\n'
-ophelp+= ' --version, -v        Show current version.'
-usage= 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
-usage= usage + ophelp
-version= "20130505-2"
+ophelp =  'Options:\n'
+ophelp += ' --host, -H <host>    TORCS server host. [localhost]\n'
+ophelp += ' --port, -p <port>    TORCS port. [3001]\n'
+ophelp += ' --id, -i <id>        ID for server. [SCR]\n'
+ophelp += ' --steps, -m <#>      Maximum simulation steps. 1 sec ~ 50 steps. [100000]\n'
+ophelp += ' --episodes, -e <#>   Maximum learning episodes. [1]\n'
+ophelp += ' --track, -t <track>  Your name for this track. Used for learning. [unknown]\n'
+ophelp += ' --stage, -s <#>      0=warm up, 1=qualifying, 2=race, 3=unknown. [3]\n'
+ophelp += ' --debug, -d          Output full telemetry.\n'
+ophelp += ' --help, -h           Show this help.\n'
+ophelp += ' --version, -v        Show current version.'
+usage = 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
+usage = usage + ophelp
+version = "20130505-2"
 
 class Client():
     def __init__(self,H=None,p=None,i=None,e=None,t=None,s=None,d=None):
         # If you don't like the option defaults,  change them here.
-        self.host= 'localhost'
-        self.port= 3001
-        self.sid= 'SCR'
-        self.maxEpisodes=1
-        self.trackname= 'unknown'
-        self.stage= 3
-        self.debug= False
-        self.maxSteps= 100000  # 50steps/second
+        self.host = 'localhost'
+        self.port = 3001
+        self.sid = 'SCR'
+        self.maxEpisodes = 1
+        self.trackname = 'unknown'
+        self.stage = 3
+        self.debug = False
+        self.maxSteps = 100000  # 50steps/second
         self.parse_the_command_line()
-        if H: self.host= H
-        if p: self.port= p
-        if i: self.sid= i
-        if e: self.maxEpisodes= e
-        if t: self.trackname= t
-        if s: self.stage= s
-        if d: self.debug= d
-        self.S= ServerState()
-        self.R= DriverAction()
+        if H: self.host = H
+        if p: self.port = p
+        if i: self.sid = i
+        if e: self.maxEpisodes = e
+        if t: self.trackname = t
+        if s: self.stage = s
+        if d: self.debug = d
+        self.S = ServerState()
+        self.R = DriverAction()
         self.setup_connection()
 
     def setup_connection(self):
         # == Set Up UDP Socket ==
         try:
-            self.so= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        except socket.error, emsg:
-            print 'Error: Could not create socket...'
+            self.so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        except socket.error:
+            print('Error: Could not create socket...')
             sys.exit(-1)
         # == Initialize Connection To Server ==
         self.so.settimeout(1)
         while True:
-            a= "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
-            initmsg='%s(init %s)' % (self.sid,a)
+            a = "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
+            initmsg = '%s(init %s)' % (self.sid,a)
 
             try:
-                self.so.sendto(initmsg, (self.host, self.port))
-            except socket.error, emsg:
+                self.so.sendto(initmsg.encode(), (self.host, self.port))
+            except socket.error as emsg:
                 sys.exit(-1)
             sockdata= str()
             try:
                 sockdata,addr= self.so.recvfrom(1024)
-            except socket.error, emsg:
-                print "Waiting for server............"
+                sockdata = sockdata.decode()
+            except socket.error as emsg:
+                print("Waiting for server............")
             if '***identified***' in sockdata:
-                print "Client connected.............."
+                print("Client connected..............")
                 break
 
     def parse_the_command_line(self):
@@ -128,13 +129,13 @@ class Client():
                        ['host=','port=','id=','steps=',
                         'episodes=','track=','stage=',
                         'debug','help','version'])
-        except getopt.error, why:
-            print 'getopt error: %s\n%s' % (why, usage)
+        except getopt.error as why:
+            print(('getopt error: %s\n%s' % (why, usage)))
             sys.exit(-1)
         try:
             for opt in opts:
                 if opt[0] == '-h' or opt[0] == '--help':
-                    print usage
+                    print(usage)
                     sys.exit(0)
                 if opt[0] == '-d' or opt[0] == '--debug':
                     self.debug= True
@@ -153,36 +154,37 @@ class Client():
                 if opt[0] == '-m' or opt[0] == '--steps':
                     self.maxSteps= int(opt[1])
                 if opt[0] == '-v' or opt[0] == '--version':
-                    print '%s %s' % (sys.argv[0], version)
+                    print(('%s %s' % (sys.argv[0], version)))
                     sys.exit(0)
-        except ValueError, why:
-            print 'Bad parameter \'%s\' for option %s: %s\n%s' % (
-                                       opt[1], opt[0], why, usage)
+        except ValueError as why:
+            print(('Bad parameter \'%s\' for option %s: %s\n%s' % (
+                                       opt[1], opt[0], why, usage)))
             sys.exit(-1)
         if len(args) > 0:
-            print 'Superflous input? %s\n%s' % (', '.join(args), usage)
+            print(('Superflous input? %s\n%s' % (', '.join(args), usage)))
             sys.exit(-1)
 
     def get_servers_input(self):
         '''Server's input is stored in a ServerState object'''
         if not self.so: return
-        sockdata= str()
+        sockdata = str()
         while True:
             try:
                 # Receive server data 
                 sockdata,addr= self.so.recvfrom(1024)
-            except socket.error, emsg:
-                print "Waiting for data.............."
+                sockdata = sockdata.decode()
+            except socket.error as emsg:
+                print("Waiting for data..............")
             if '***identified***' in sockdata:
-                print "Client connected.............."
+                print("Client connected..............")
                 continue
             elif '***shutdown***' in sockdata:
-                print "Server has stopped the race. You were in %d place." % self.S.d['racePos']
+                print(("Server has stopped the race. You were in %d place." % self.S.d['racePos']))
                 self.shutdown()
                 return
             elif '***restart***' in sockdata:
                 # What do I do here?
-                print "Server has restarted the race."
+                print("Server has restarted the race.")
                 # I haven't actually caught the server doing this.
                 self.shutdown()
                 return
@@ -190,21 +192,21 @@ class Client():
                 continue       # Try again.
             else:
                 self.S.parse_server_str(sockdata)
-                if self.debug: print self.S
+                if self.debug: print((self.S))
                 break # Can now return from this function.
 
     def respond_to_server(self):
         if not self.so: return
-        if self.debug: print self.R
+        if self.debug: print((self.R))
         try:
-            self.so.sendto(repr(self.R), (self.host, self.port))
-        except socket.error, emsg:
-            print "Error sending to server: %s Message %s" % (emsg[1],str(emsg[0]))
+            self.so.sendto(repr(self.R).encode(), (self.host, self.port))
+        except socket.error as emsg:
+            print(("Error sending to server: %s Message %s" % (emsg[1],str(emsg[0]))))
             sys.exit(-1)
 
     def shutdown(self):
         if not self.so: return
-        print "Race terminated or %d steps elapsed. Shutting down." % self.maxSteps
+        print(("Race terminated or %d steps elapsed. Shutting down." % self.maxSteps))
         self.so.close()
         self.so= None
         #sys.exit() # No need for this really.
@@ -272,7 +274,7 @@ def destringify(s):
         try:
             return float(s)
         except ValueError:
-            print "Could not find a value in %s" % s
+            print(("Could not find a value in %s" % s))
             return s
     elif type(s) is list:
         if len(s) < 2:
@@ -333,7 +335,7 @@ def drive_example(c):
 # ================ MAIN ================
 if __name__ == "__main__":
     C= Client()
-    for step in xrange(C.maxSteps,0,-1):
+    for step in range(C.maxSteps,0,-1):
         C.get_servers_input()
         drive_example(C)
         C.respond_to_server()
