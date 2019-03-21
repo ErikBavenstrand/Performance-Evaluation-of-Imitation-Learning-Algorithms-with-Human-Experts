@@ -1,4 +1,5 @@
 venv/
-torcs/
+torcs/openal-soft-1.17.2/
+torcs/plib-1.8.5/
 *.pyc
 __pycache__/

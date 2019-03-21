@@ -15,6 +15,9 @@ def drive(c):
     R= c.R.d
     target_speed=100
 
+    print("Distance from start: " + str(S['distFromStart']) + "    Distance raced: " + str(S['distRaced']))
+    #print("Distance to left: " + str(S['track'][0]) + "    Distance to right: " + str(S['track'][18]))
+
     # Damage Control
     target_speed-= S['damage'] * .05
     if target_speed < 25: target_speed= 25

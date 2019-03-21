@@ -1,0 +1,6 @@
+torcs/torcs-1.3.7/src/libs/raceengineclient/racestate.cpp -> ReStateMange(): Loops and executes code baed on what state the game is in. This is calls the following methods
+    torcs/torcs-1.3.7/src/libs/raceengineclient/racemain.cpp -> ReRaceStart(): pre race setup
+        torcs/torcs-1.3.7/src/libs/raceengineclient/racemain.cpp -> reRaceRealStart(): setup the race
+    torcs/torcs-1.3.7/src/libs/raceengineclient/raceengine.cpp -> ReUpdate(): run one update iteration of the game
+        torcs/torcs-1.3.7/src/libs/raceengineclient/raceengine.cpp -> ReOneStep(): one timestep of the game
+            torcs/torcs-1.3.7/scr_server/scr_server.cpp -> drive(): Called from rbDrive. One rbDrive for each "player". Our drive is in the server file. Gets and sets values from the snakeoil client
