@@ -1,4 +1,5 @@
 venv/
 torcs/
+.vscode/
 *.pyc
 __pycache__/
