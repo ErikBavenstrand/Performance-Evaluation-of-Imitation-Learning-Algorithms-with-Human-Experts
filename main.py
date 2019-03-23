@@ -15,9 +15,6 @@ def drive(c):
     R= c.R.d
     target_speed=100
 
-    print("Distance from start: " + str(S['distFromStart']) + "    Distance raced: " + str(S['distRaced']))
-    #print("Distance to left: " + str(S['track'][0]) + "    Distance to right: " + str(S['track'][18]))
-
     # Damage Control
     target_speed-= S['damage'] * .05
     if target_speed < 25: target_speed= 25
@@ -57,9 +54,11 @@ def drive(c):
     return
 
 if __name__ == "__main__":
-    C = snakeoil.Client()
-    for step in range(C.maxSteps):
-        C.get_servers_input()
-        drive(C)
-        C.respond_to_server()
-    C.shutdown()
+    Cs= [ snakeoil.Client(p=P) for P in [3001,3002,3003,3004] ]
+    for step in range(Cs[0].maxSteps):
+        for C in Cs:
+            C.get_servers_input()
+            snakeoil.drive_example(C)
+            C.respond_to_server()
+    else:
+        for C in Cs: C.shutdown()
