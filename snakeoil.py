@@ -292,6 +292,8 @@ def drive_example(c):
     correct thing to do is write your own `drive()` function.'''
     S= c.S.d
     R= c.R.d
+
+    print(S)
     target_speed=100
 
     # Damage Control
