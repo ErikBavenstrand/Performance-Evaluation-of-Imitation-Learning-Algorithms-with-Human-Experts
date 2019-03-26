@@ -52,13 +52,13 @@
 # sufficient for getting around most tracks.
 # Try `snakeoil.py --help` to get started.
 
-import socket 
+import socket
 import sys
 import getopt
-PI= 3.14159265359
+PI = 3.14159265359
 
 # Initialize help messages
-ophelp =  'Options:\n'
+ophelp = 'Options:\n'
 ophelp += ' --host, -H <host>    TORCS server host. [localhost]\n'
 ophelp += ' --port, -p <port>    TORCS port. [3001]\n'
 ophelp += ' --id, -i <id>        ID for server. [SCR]\n'
@@ -73,8 +73,9 @@ usage = 'Usage: %s [ophelp [optargs]] \n' % sys.argv[0]
 usage = usage + ophelp
 version = "20130505-2"
 
+
 class Client():
-    def __init__(self,H=None,p=None,i=None,e=None,t=None,s=None,d=None):
+    def __init__(self, H=None, p=None, i=None, e=None, t=None, s=None, d=None):
         # If you don't like the option defaults,  change them here.
         self.host = 'localhost'
         self.port = 3001
@@ -85,13 +86,20 @@ class Client():
         self.debug = False
         self.maxSteps = 100000  # 50steps/second
         self.parse_the_command_line()
-        if H: self.host = H
-        if p: self.port = p
-        if i: self.sid = i
-        if e: self.maxEpisodes = e
-        if t: self.trackname = t
-        if s: self.stage = s
-        if d: self.debug = d
+        if H:
+            self.host = H
+        if p:
+            self.port = p
+        if i:
+            self.sid = i
+        if e:
+            self.maxEpisodes = e
+        if t:
+            self.trackname = t
+        if s:
+            self.stage = s
+        if d:
+            self.debug = d
         self.S = ServerState()
         self.R = DriverAction()
         self.setup_connection()
@@ -107,15 +115,15 @@ class Client():
         self.so.settimeout(1)
         while True:
             a = "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
-            initmsg = '%s(init %s)' % (self.sid,a)
+            initmsg = '%s(init %s)' % (self.sid, a)
 
             try:
                 self.so.sendto(initmsg.encode(), (self.host, self.port))
             except socket.error as emsg:
                 sys.exit(-1)
-            sockdata= str()
+            sockdata = str()
             try:
-                sockdata,addr= self.so.recvfrom(1024)
+                sockdata, addr = self.so.recvfrom(1024)
                 sockdata = sockdata.decode()
             except socket.error as emsg:
                 print("Waiting for server............")
@@ -126,9 +134,9 @@ class Client():
     def parse_the_command_line(self):
         try:
             (opts, args) = getopt.getopt(sys.argv[1:], 'H:p:i:m:e:t:s:dhv',
-                       ['host=','port=','id=','steps=',
-                        'episodes=','track=','stage=',
-                        'debug','help','version'])
+                                         ['host=', 'port=', 'id=', 'steps=',
+                                          'episodes=', 'track=', 'stage=',
+                                          'debug', 'help', 'version'])
         except getopt.error as why:
             print(('getopt error: %s\n%s' % (why, usage)))
             sys.exit(-1)
@@ -138,21 +146,21 @@ class Client():
                     print(usage)
                     sys.exit(0)
                 if opt[0] == '-d' or opt[0] == '--debug':
-                    self.debug= True
+                    self.debug = True
                 if opt[0] == '-H' or opt[0] == '--host':
-                    self.host= opt[1]
+                    self.host = opt[1]
                 if opt[0] == '-i' or opt[0] == '--id':
-                    self.sid= opt[1]
+                    self.sid = opt[1]
                 if opt[0] == '-t' or opt[0] == '--track':
-                    self.trackname= opt[1]
+                    self.trackname = opt[1]
                 if opt[0] == '-s' or opt[0] == '--stage':
-                    self.stage= opt[1]
+                    self.stage = opt[1]
                 if opt[0] == '-p' or opt[0] == '--port':
-                    self.port= int(opt[1])
+                    self.port = int(opt[1])
                 if opt[0] == '-e' or opt[0] == '--episodes':
-                    self.maxEpisodes= int(opt[1])
+                    self.maxEpisodes = int(opt[1])
                 if opt[0] == '-m' or opt[0] == '--steps':
-                    self.maxSteps= int(opt[1])
+                    self.maxSteps = int(opt[1])
                 if opt[0] == '-v' or opt[0] == '--version':
                     print(('%s %s' % (sys.argv[0], version)))
                     sys.exit(0)
@@ -166,12 +174,13 @@ class Client():
 
     def get_servers_input(self):
         '''Server's input is stored in a ServerState object'''
-        if not self.so: return
+        if not self.so:
+            return
         sockdata = str()
         while True:
             try:
                 # Receive server data 
-                sockdata,addr= self.so.recvfrom(1024)
+                sockdata, addr = self.so.recvfrom(1024)
                 sockdata = sockdata.decode()
             except socket.error as emsg:
                 print("Waiting for data..............")

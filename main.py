@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import agent
+import key_listener
 
 
 def clip(v, lo, hi):
@@ -69,6 +70,9 @@ action_list = []
 # Start torcs
 env = gym.TorcsEnv()
 
+# Start listening to keys
+keyboard = key_listener.KeyListener()
+
 # ----------------------------------------------------------------------------
 # Expert demonstration
 print("#"*50)
@@ -95,6 +99,9 @@ for i in range(steps):
 
     # Execute the action and get the new observation
     obs = env.step(act)
+    key = keyboard.inputchar()
+    if key:
+        print(key)
 
 # Exit torcs
 env.end()
