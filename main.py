@@ -13,9 +13,50 @@ def clip(v, lo, hi):
     else:
         return v
 
+prev_shift_up = False
+prev_shift_down = False
+
 
 def get_expert_act(act, obs):
     """Get the action that the expert would preform"""
+    global prev_shift_up
+    global prev_shift_down
+    key = keyboard.getKey()
+
+    if key.up:
+        act.accel += .1
+    else:
+        act.accel -= .1
+
+    if key.down:
+        act.brake += .1
+    else:
+        act.brake -= .1
+
+    if key.left:
+        act.steer += .05
+    elif key.right:
+        act.steer -= .05
+    else:
+        act.steer = 0
+
+    if key.shift_up and prev_shift_up is False:
+        act.gear += 1
+        prev_shift_up = True
+    elif key.shift_up is False:
+        prev_shift_up = False
+
+    if key.shift_down and prev_shift_down is False:
+        act.gear -= 1
+        prev_shift_down = True
+    elif key.shift_down is False:
+        prev_shift_down = False
+
+    act.accel = clip(act.accel, 0, 1)
+    act.brake = clip(act.brake, 0, 1)
+    act.steer = clip(act.steer, -1, 1)
+
+    """
     target_speed = 100
     act.steer = obs.angle * 10 / env.PI
     act.steer -= obs.trackPos * .10
@@ -38,6 +79,7 @@ def get_expert_act(act, obs):
     if obs.speedX > 170:
         act.gear = 6
     act.accel = clip(act.accel, 0, 1)
+    """
     return act
 
 # ----------------------------------------------------------------------------
@@ -70,7 +112,6 @@ action_list = []
 # Start torcs
 env = gym.TorcsEnv(manual=True)
 
-# Start listening to keys
 keyboard = key_listener.KeyListener()
 
 # ----------------------------------------------------------------------------
@@ -99,9 +140,6 @@ for i in range(steps):
 
     # Execute the action and get the new observation
     obs = env.step(act)
-    key = keyboard.inputchar()
-    if key:
-        print(key)
 
 # Exit torcs
 env.end()
@@ -155,12 +193,13 @@ for episode in range(episode_count):
         # Let agent decide on an action and store expert action in list
         act_list = model.predict(np.reshape(obs_list, (1, 69)))
         act.set_act(act_list, accel=True, gear=True, steer=True)
+        v = act
         action_list.append(get_expert_act(act, obs).get_act(accel=True,
                                                             gear=True,
                                                             steer=True))
 
         # Execute the action and get the new observation
-        obs = env.step(act)
+        obs = env.step(v)
 
     # Exit torcs
     env.end()
