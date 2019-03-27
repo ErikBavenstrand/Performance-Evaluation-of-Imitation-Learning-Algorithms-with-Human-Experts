@@ -187,15 +187,13 @@ class Action:
 
 
 class TorcsEnv:
-    def __init__(self):
+    def __init__(self, manual=False):
         """API for communicating with snakeoil.py and torcs. Launches torcs"""
         print("Launching torcs...")
-        os.system('pkill torcs')
-        time.sleep(0.5)
-        os.system('torcs &')
-        time.sleep(0.5)
-        os.system('sh autostart.sh')
-        time.sleep(0.5)
+        if manual:
+            self.__reset_torcs_manual()
+        else:
+            self.__reset_torcs()
         print("Connecting to torcs...")
         self.client = snakeoil.Client(p=3001)
         self.client.maxSteps = np.inf
@@ -219,9 +217,12 @@ class TorcsEnv:
         self.obs.update_obs(self.client.S.d)
         return self.obs
 
-    def reset(self):
+    def reset(self, manual=False):
         """Re-launch torcs"""
-        self.reset_torcs()
+        if manual:
+            self.__reset_torcs_manual()
+        else:
+            self.__reset_torcs()
         self.client = snakeoil.Client(p=3001)
         self.client.MAX_STEPS = np.inf
         self.client.get_servers_input()
@@ -231,11 +232,20 @@ class TorcsEnv:
         """Kill torcs"""
         os.system('pkill torcs')
 
-    def reset_torcs(self):
+    def __reset_torcs(self):
         """Close torcs and run setup script"""
         os.system('pkill torcs')
         time.sleep(0.5)
         os.system('torcs &')
         time.sleep(0.5)
-        os.system('sh autostart.sh')
+        os.system('sh ./scripts/autostart.sh')
+        time.sleep(0.5)
+
+    def __reset_torcs_manual(self):
+        """Close torcs and run manual setup script"""
+        os.system('pkill torcs')
+        time.sleep(0.5)
+        os.system('torcs &')
+        time.sleep(0.5)
+        os.system('sh ./scripts/manualstart.sh')
         time.sleep(0.5)

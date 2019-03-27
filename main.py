@@ -68,7 +68,7 @@ observation_list = []
 action_list = []
 
 # Start torcs
-env = gym.TorcsEnv()
+env = gym.TorcsEnv(manual=True)
 
 # Start listening to keys
 keyboard = key_listener.KeyListener()
@@ -135,7 +135,7 @@ for episode in range(episode_count):
     action_list = []
 
     # Restart the game for every iteration
-    env = gym.TorcsEnv()
+    env = gym.TorcsEnv(manual=True)
 
     print("#"*50)
     print("# Episode: %d start" % episode)
