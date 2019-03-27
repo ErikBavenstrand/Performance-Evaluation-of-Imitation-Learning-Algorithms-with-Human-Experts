@@ -171,14 +171,13 @@ for episode in range(episode_count):
         # Let agent decide on an action and store expert action in list
         act_list = model.predict(np.reshape(obs_list, (1, 69)))
         act.set_act(act_list, accel=True, gear=True, steer=True)
-        v = act
         action_list.append(get_expert_act(act, obs).get_act(accel=True,
                                                             brake=True,
                                                             gear=True,
                                                             steer=True))
 
         # Execute the action and get the new observation
-        obs = env.step(v)
+        obs = env.step(act)
 
     # Exit torcs
     env.end()
