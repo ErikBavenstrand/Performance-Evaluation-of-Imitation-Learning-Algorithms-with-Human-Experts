@@ -162,21 +162,22 @@ class Action:
     def set_act(self, act, accel=None, brake=None, clutch=None, gear=None,
                 steer=None, focus=None, meta=None):
         """Set the values specified with a numpy array"""
+# print("ACCEL: %f, GEAR %f, STEER: %f" % (act[0][0], act[0][1], act[0][2]))
         i = 0
         if accel:
-            self.accel = act[0][i]
+            self.accel = self.__clip(act[0][i], 0, 1)
             i += 1
         if brake:
-            self.brake = act[0][i]
+            self.brake = self.__clip(act[0][i], 0, 1)
             i += 1
         if clutch:
-            self.clutch = act[0][i]
+            self.clutch = self.__clip(act[0][i], 0, 1)
             i += 1
         if gear:
-            self.gear = act[0][i]
+            self.gear = int(round(act[0][i]))
             i += 1
         if steer:
-            self.steer = act[0][i]
+            self.steer = self.__clip(act[0][i], -1, 1)
             i += 1
         if focus:
             self.focus = act[0][i]
@@ -184,6 +185,24 @@ class Action:
         if meta:
             self.meta = act[0][i]
             i += 1
+# print("ACCEL: %f, GEAR %f, STEER: %f" % (self.accel, self.gear, self.steer))
+
+    def copy(self, act):
+        """Copy an esting action to this"""
+        self.accel = act.accel
+        self.brake = act.brake
+        self.clutch = act.clutch
+        self.gear = act.gear
+        self.steer = act.steer
+        self.focus = act.focus
+        self.meta = act.meta
+
+    def __clip(self, v, lo, hi):
+        if v > hi:
+            return hi
+        if v < lo:
+            return lo
+        return v
 
 
 class TorcsEnv:

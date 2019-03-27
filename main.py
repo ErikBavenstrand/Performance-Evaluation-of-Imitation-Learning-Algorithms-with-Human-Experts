@@ -16,29 +16,32 @@ def clip(v, lo, hi):
 
 def get_expert_act(act, obs):
     """Get the action that the expert would preform"""
+    new_act = gym.Action()
+    new_act.copy(act)
+
     target_speed = 100
-    act.steer = obs.angle * 10 / env.PI
-    act.steer -= obs.trackPos * .10
-    act.steer = clip(act.steer, -1, 1)
-    if obs.speedX < target_speed - (act.steer * 50):
-        act.accel += .01
+    new_act.steer = obs.angle * 10 / env.PI
+    new_act.steer -= obs.trackPos * .10
+    new_act.steer = clip(new_act.steer, -1, 1)
+    if obs.speedX < target_speed - (new_act.steer * 50):
+        new_act.accel += .01
     else:
-        act.accel -= .01
+        new_act.accel -= .01
     if obs.speedX < 10:
-        act.accel += 1 / (obs.speedX + .1)
-    act.gear = 1
+        new_act.accel += 1 / (obs.speedX + .1)
+    new_act.gear = 1
     if obs.speedX > 50:
-        act.gear = 2
+        new_act.gear = 2
     if obs.speedX > 80:
-        act.gear = 3
+        new_act.gear = 3
     if obs.speedX > 110:
-        act.gear = 4
+        new_act.gear = 4
     if obs.speedX > 140:
-        act.gear = 5
+        new_act.gear = 5
     if obs.speedX > 170:
-        act.gear = 6
-    act.accel = clip(act.accel, 0, 1)
-    return act
+        new_act.gear = 6
+    new_act.accel = clip(new_act.accel, 0, 1)
+    return new_act
 
 # ----------------------------------------------------------------------------
 # Number of sensors in observations
@@ -48,7 +51,7 @@ sensor_count = 69
 action_count = 3
 
 # Number of steps per iteration
-steps = 4000
+steps = 2000
 
 # Number of epochs
 epoch_count = 100
@@ -57,7 +60,7 @@ epoch_count = 100
 batch_size = 32
 
 # Episode count
-episode_count = 5
+episode_count = 20
 
 # All observations and their corresponding actions are stored here
 observations_all = np.zeros((0, sensor_count))
@@ -158,7 +161,7 @@ for episode in range(episode_count):
         action_list.append(get_expert_act(act, obs).get_act(accel=True,
                                                             gear=True,
                                                             steer=True))
-
+        
         # Execute the action and get the new observation
         obs = env.step(act)
 
