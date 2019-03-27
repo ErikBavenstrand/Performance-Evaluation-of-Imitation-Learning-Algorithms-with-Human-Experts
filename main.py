@@ -19,6 +19,9 @@ prev_shift_down = False
 
 def get_expert_act(act, obs):
     """Get the action that the expert would preform"""
+    new_act = gym.Action()
+    new_act.copy(act)
+
     global prev_shift_up
     global prev_shift_down
     key = keyboard.getKey()
@@ -55,31 +58,6 @@ def get_expert_act(act, obs):
     act.accel = clip(act.accel, 0, 1)
     act.brake = clip(act.brake, 0, 1)
     act.steer = clip(act.steer, -1, 1)
-
-    """
-    target_speed = 100
-    act.steer = obs.angle * 10 / env.PI
-    act.steer -= obs.trackPos * .10
-    act.steer = clip(act.steer, -1, 1)
-    if obs.speedX < target_speed - (act.steer * 50):
-        act.accel += .01
-    else:
-        act.accel -= .01
-    if obs.speedX < 10:
-        act.accel += 1 / (obs.speedX + .1)
-    act.gear = 1
-    if obs.speedX > 50:
-        act.gear = 2
-    if obs.speedX > 80:
-        act.gear = 3
-    if obs.speedX > 110:
-        act.gear = 4
-    if obs.speedX > 140:
-        act.gear = 5
-    if obs.speedX > 170:
-        act.gear = 6
-    act.accel = clip(act.accel, 0, 1)
-    """
     return act
 
 # ----------------------------------------------------------------------------
@@ -87,7 +65,7 @@ def get_expert_act(act, obs):
 sensor_count = 69
 
 # Number of availiable actions
-action_count = 3
+action_count = 4
 
 # Number of steps per iteration
 steps = 4000
@@ -99,7 +77,7 @@ epoch_count = 100
 batch_size = 32
 
 # Episode count
-episode_count = 5
+episode_count = 10
 
 # All observations and their corresponding actions are stored here
 observations_all = np.zeros((0, sensor_count))
@@ -135,7 +113,7 @@ for i in range(steps):
     observation_list.append(obs_list)
 
     # Add the correspondig action to the list of actions
-    act_list = act.get_act(accel=True, gear=True, steer=True)
+    act_list = act.get_act(accel=True, brake=True, gear=True, steer=True)
     action_list.append(act_list)
 
     # Execute the action and get the new observation
@@ -195,6 +173,7 @@ for episode in range(episode_count):
         act.set_act(act_list, accel=True, gear=True, steer=True)
         v = act
         action_list.append(get_expert_act(act, obs).get_act(accel=True,
+                                                            brake=True,
                                                             gear=True,
                                                             steer=True))
 

@@ -16,6 +16,8 @@ class Agent(object):
         self.model.add(layers.Dense(32, input_dim=self.input_num,
                                     activation='linear'))
         self.model.add(layers.Dense(16, activation='linear'))
+        self.model.add(layers.Dense(64, activation='linear'))
+        self.model.add(layers.Dense(32, activation='linear'))
         self.model.add(layers.Dense(self.output_num, activation='linear'))
         self.model.compile(optimizer='rmsprop', loss='mse')
 
