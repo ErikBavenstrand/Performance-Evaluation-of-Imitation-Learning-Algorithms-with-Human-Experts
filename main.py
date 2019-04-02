@@ -1,74 +1,32 @@
+import pickle
+import pygame
 import numpy as np
 import gym
 import agent
-import key_listener
+import interface
+import expert
+import action
 
 
-def clip(v, lo, hi):
-    """Makes sure that the value is between lo and hi"""
-    if v < lo:
-        return lo
-    elif v > hi:
-        return hi
-    else:
-        return v
-
-prev_shift_up = False
-prev_shift_down = False
-
-
-def get_expert_act(act, obs):
-    """Get the action that the expert would preform"""
-    new_act = gym.Action()
-    new_act.copy(act)
-
-    global prev_shift_up
-    global prev_shift_down
-    key = keyboard.getKey()
-
-    if key.up:
-        act.accel += .1
-    else:
-        act.accel -= .1
-
-    if key.down:
-        act.brake += .1
-    else:
-        act.brake -= .1
-
-    if key.left:
-        act.steer += .05
-    elif key.right:
-        act.steer -= .05
-    else:
-        act.steer = 0
-
-    if key.shift_up and prev_shift_up is False:
-        act.gear += 1
-        prev_shift_up = True
-    elif key.shift_up is False:
-        prev_shift_up = False
-
-    if key.shift_down and prev_shift_down is False:
-        act.gear -= 1
-        prev_shift_down = True
-    elif key.shift_down is False:
-        prev_shift_down = False
-
-    act.accel = clip(act.accel, 0, 1)
-    act.brake = clip(act.brake, 0, 1)
-    act.steer = clip(act.steer, -1, 1)
-    return act
-
+# DEFINES AND INITIALIZATIONS
 # ----------------------------------------------------------------------------
 # Number of sensors in observations
-sensor_count = 69
+sensor_count = 29
 
 # Number of availiable actions
-action_count = 4
+action_count = 3
 
-# Number of steps per iteration
-steps = 4000
+# Number of demonstations that the expert preforms
+expert_demonstration_count = 3
+
+# Episode count of dagger step
+dagger_episode_count = 20
+
+# Number of steps per expert iteration
+expert_steps = 4000
+
+# Number of steps per dagger iteration
+dagger_steps = 4000
 
 # Number of epochs
 epoch_count = 100
@@ -76,64 +34,80 @@ epoch_count = 100
 # Batch size
 batch_size = 32
 
-# Episode count
-episode_count = 10
+# If track selection is done manually
+manual_reset = False
+
+# If wheel or keyboard is used
+using_steering_wheel = True
+
+# FILL HERE IF AUTOMATIC DRIVING
+automatic = True
 
 # All observations and their corresponding actions are stored here
 observations_all = np.zeros((0, sensor_count))
-actions_all = np.zeros((0, 3))
+actions_all = np.zeros((0, action_count))
 
-# All observations and actions for a single iteration are stored here
-observation_list = []
-action_list = []
+# Initialize the input interface
+interface = interface.Interface(using_steering_wheel)
 
-# Start torcs
-env = gym.TorcsEnv(manual=True)
+# Create the expert
+expert = expert.Expert(interface, automatic=automatic)
 
-keyboard = key_listener.KeyListener()
 
+# EXPERT DEMONSTRATION
 # ----------------------------------------------------------------------------
-# Expert demonstration
-print("#"*50)
-print("Running expert algorithm...")
-for i in range(steps):
-    # If first iteration, get observation and action
-    if i == 0:
-        act = env.act
-        obs = env.obs
+print("Expert Demonstration")
+for episode in range(expert_demonstration_count):
+    # Start torcs
+    env = gym.TorcsEnv(manual=manual_reset)
 
-    # Get the action from the expert
-    act = get_expert_act(act, obs)
+    # Observations and actions for this iteration are stored here
+    observation_list = []
+    action_list = []
 
-    # Add the current observation to the list of observations
-    obs_list = obs.get_obs(angle=True, gear=True, opponents=True, rpm=True,
-                           speedX=True, speedY=True, speedZ=True, track=True,
-                           trackPos=True, wheelSpinVel=True, roll=True,
-                           pitch=True, yaw=True)
-    observation_list.append(obs_list)
+    # Expert demonstration
+    print("#" * 100)
+    print("# Episode: %d start" % episode)
+    for i in range(expert_steps):
+        # If first iteration, get observation and action
+        if i == 0:
+            act = env.act
+            obs = env.obs
 
-    # Add the correspondig action to the list of actions
-    act_list = act.get_act(accel=True, brake=True, gear=True, steer=True)
-    action_list.append(act_list)
+        # Get the action from the expert
+        act = expert.get_expert_act(act, obs)
 
-    # Execute the action and get the new observation
-    obs = env.step(act)
+        # Normalize the observation and add it to list of observations
+        obs.normalize_obs()
+        obs_list = obs.get_obs(angle=True, gear=True, rpm=True,
+                               speedX=True, speedY=True, track=True,
+                               trackPos=True, wheelSpinVel=True)
+        observation_list.append(obs_list)
 
-# Exit torcs
-env.end()
+        # Normalize the act and add it to list of actions
+        # Important to un-normalize the act before sending it to torcs
+        act.normalize_act()
+        act_list = act.get_act(gas=True, gear=True, steer=True)
+        action_list.append(act_list)
+        act.un_normalize_act()
 
-# ----------------------------------------------------------------------------
-# Summarizing the demonstration
-print("#"*50)
-print('Packing expert data into arrays...')
-for observation, action in zip(observation_list, action_list):
-    # Concatenate all observations into array of arrays
-    observations_all = np.concatenate([observations_all, np.reshape(
-        observation, (1, sensor_count))], axis=0)
+        # Execute the action and get the new observation
+        obs = env.step(act)
 
-    # Concatenate all actions into array of arrays
-    actions_all = np.concatenate([actions_all, np.reshape(
-        action, (1, action_count))], axis=0)
+    # Exit torcs
+    env.end()
+
+    # ----------------------------------------------------------------------------
+    # Summarizing the demonstration
+    print('Packing expert data into arrays...')
+    for observation, action_made in zip(observation_list, action_list):
+        # Concatenate all observations into array of arrays
+        observations_all = np.concatenate([observations_all, np.reshape(
+            observation, (1, sensor_count))], axis=0)
+
+        # Concatenate all actions into array of arrays
+        actions_all = np.concatenate([actions_all, np.reshape(
+            action_made, (1, action_count))], axis=0)
 
 # Create the learning agent
 model = agent.Agent(name='model', input_num=observations_all[0].size,
@@ -143,38 +117,49 @@ model = agent.Agent(name='model', input_num=observations_all[0].size,
 model.train(observations_all, actions_all, n_epoch=epoch_count,
             batch=batch_size)
 
+# DAGGER STEP
 # ----------------------------------------------------------------------------
 # Run the agent and aggregate new data produced by the expert
-for episode in range(episode_count):
+for episode in range(dagger_episode_count):
     # Observations and actions for this iteration are stored here
     observation_list = []
     action_list = []
 
     # Restart the game for every iteration
-    env = gym.TorcsEnv(manual=True)
+    env = gym.TorcsEnv(manual=manual_reset)
 
-    print("#"*50)
+    print("#" * 100)
     print("# Episode: %d start" % episode)
-    for i in range(steps):
+    for i in range(dagger_steps):
         # If first iteration, get observation and action
         if i == 0:
             act = env.act
             obs = env.obs
 
-        # Add the current observation to the list of observations
-        obs_list = obs.get_obs(angle=True, gear=True, opponents=True, rpm=True,
-                               speedX=True, speedY=True, speedZ=True,
-                               track=True, trackPos=True, wheelSpinVel=True,
-                               roll=True, pitch=True, yaw=True)
+        # If quit key is pressed, prematurely end this run
+        if interface.check_key(pygame.KEYDOWN, pygame.K_q):
+            break
+
+        # Get the action that the expert would take
+        new_act = expert.get_expert_act(act, obs)
+        new_act.normalize_act()
+        new_act_list = new_act.get_act(gas=True,
+                                       gear=True,
+                                       steer=True)
+        action_list.append(new_act_list)
+
+        # Normalize the observation and add it to list of observations
+        obs.normalize_obs()
+        obs_list = obs.get_obs(angle=True, gear=True, rpm=True,
+                               speedX=True, speedY=True, track=True,
+                               trackPos=True, wheelSpinVel=True)
         observation_list.append(obs_list)
 
-        # Let agent decide on an action and store expert action in list
-        act_list = model.predict(np.reshape(obs_list, (1, 69)))
-        act.set_act(act_list, accel=True, gear=True, steer=True)
-        action_list.append(get_expert_act(act, obs).get_act(accel=True,
-                                                            brake=True,
-                                                            gear=True,
-                                                            steer=True))
+        # Normalize the act and add it to list of actions
+        # Important to un-normalize the act before sending it to torcs
+        act_list = model.predict(np.reshape(obs_list, (1, sensor_count)))
+        act.set_act(act_list, gas=True, gear=True, steer=True)
+        act.un_normalize_act()
 
         # Execute the action and get the new observation
         obs = env.step(act)
@@ -183,14 +168,14 @@ for episode in range(episode_count):
     env.end()
 
     # Summarize the observations and corresponding actions
-    for observation, action in zip(observation_list, action_list):
+    for observation, action_made in zip(observation_list, action_list):
         # Concatenate all observations into array of arrays
         observations_all = np.concatenate([observations_all, np.reshape(
             observation, (1, sensor_count))], axis=0)
 
         # Concatenate all actions into array of arrays
         actions_all = np.concatenate([actions_all, np.reshape(
-            action, (1, action_count))], axis=0)
+            action_made, (1, action_count))], axis=0)
 
     # Train the model with the aggregated observations and actions
     model.train(observations_all, actions_all, n_epoch=epoch_count,
