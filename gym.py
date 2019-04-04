@@ -53,6 +53,10 @@ class TorcsEnv:
         """Kill torcs"""
         os.system('pkill torcs')
 
+    def slow(self):
+        """Slow down torcs"""
+        os.system("sh ./scripts/slow_down.sh")
+
     def __reset_torcs(self):
         """Close torcs and run setup script"""
         os.system('pkill torcs')

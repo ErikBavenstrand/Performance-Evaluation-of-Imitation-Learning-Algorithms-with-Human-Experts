@@ -21,49 +21,46 @@ class Expert:
         else:
             return v
 
-    def get_expert_act(self, act, obs):
+    def get_expert_act(self, obs):
         """Get the action that the expert would preform"""
-        new_act = action.Action()
-        new_act.copy(act)
-
         # If expert is human or simple algorithm
         if self.automatic:
             target_speed = 100
-            new_act.steer = obs.angle * 10 / defines.PI
-            new_act.steer -= obs.trackPos * .10
-            if obs.speedX < target_speed - (new_act.steer * 50):
-                new_act.accel += .01
+            self.act.steer = obs.angle * 10 / defines.PI
+            self.act.steer -= obs.trackPos * .10
+            if obs.speedX < target_speed - (self.act.steer * 50):
+                self.act.accel += .01
             else:
-                new_act.accel -= .01
+                self.act.accel -= .01
             if obs.speedX < 10:
-                new_act.accel += 1 / (obs.speedX + .1)
-            new_act.gear = 1
+                self.act.accel += 1 / (obs.speedX + .1)
+            self.act.gear = 1
             if obs.speedX > 50:
-                new_act.gear = 2
+                self.act.gear = 2
             if obs.speedX > 80:
-                new_act.gear = 3
+                self.act.gear = 3
             if obs.speedX > 110:
-                new_act.gear = 4
+                self.act.gear = 4
             if obs.speedX > 140:
-                new_act.gear = 5
+                self.act.gear = 5
             if obs.speedX > 170:
-                new_act.gear = 6
+                self.act.gear = 6
         else:
             # If human is using steering wheel or keyboard
             if self.interface.steering_wheel:
                 steering_wheel = self.interface.get_steering_wheel_state()
-                new_act.accel = (steering_wheel.throttle * -1)
-                new_act.brake = (steering_wheel.brake * -2)
-                new_act.steer = steering_wheel.steer * -1
+                self.act.accel = (steering_wheel.throttle * -1)
+                self.act.brake = (steering_wheel.brake * -2)
+                self.act.steer = steering_wheel.steer * -1
 
                 if steering_wheel.shift_up and self.prev_shift_up is False:
-                    new_act.gear += 1
+                    self.act.gear += 1
                     self.prev_shift_up = True
                 elif steering_wheel.shift_up is False:
                     self.prev_shift_up = False
 
                 if steering_wheel.shift_down and self.prev_shift_down is False:
-                    new_act.gear -= 1
+                    self.act.gear -= 1
                     self.prev_shift_down = True
                 elif steering_wheel.shift_down is False:
                     self.prev_shift_down = False
@@ -72,45 +69,52 @@ class Expert:
                 key = self.interface.get_key_state()
 
                 if key.up:
-                    new_act.accel += .1
+                    self.act.accel += .1
                 else:
-                    new_act.accel -= .1
+                    self.act.accel -= .1
 
                 if key.down:
-                    new_act.brake += .1
+                    self.act.brake += .1
                 else:
-                    new_act.brake -= .1
+                    self.act.brake -= .1
 
                 if key.left:
-                    new_act.steer += .05
+                    self.act.steer += .05
                 elif key.right:
-                    new_act.steer -= .05
+                    self.act.steer -= .05
                 else:
-                    new_act.steer = 0
+                    self.act.steer = 0
 
                 if key.shift_up and self.prev_shift_up is False:
-                    new_act.gear += 1
+                    self.act.gear += 1
                     self.prev_shift_up = True
                 elif key.shift_up is False:
                     self.prev_shift_up = False
 
                 if key.shift_down and self.prev_shift_down is False:
-                    new_act.gear -= 1
+                    self.act.gear -= 1
                     self.prev_shift_down = True
                 elif key.shift_down is False:
                     self.prev_shift_down = False
 
         # Make sure the values are valid
-        new_act.accel = self.__clip(new_act.accel, 0, 1)
-        new_act.brake = self.__clip(new_act.brake, 0, 1)
-        new_act.gear = self.__clip(new_act.gear, -1, 7)
-        new_act.steer = self.__clip(new_act.steer, -1, 1)
-        new_act.gas = (new_act.accel / 2) - (new_act.brake / 2) + 0.5
+        self.act.accel = self.__clip(self.act.accel, 0, 1)
+        self.act.brake = self.__clip(self.act.brake, 0, 1)
+        self.act.gear = self.__clip(self.act.gear, -1, 7)
+        self.act.steer = self.__clip(self.act.steer, -1, 1)
+        self.act.gas = (self.act.accel / 2) - (self.act.brake / 2) + 0.5
 
         # Display the values on the interface
-        self.interface.display_act(new_act)
-
-        # Update act
-        self.act = new_act
+        self.interface.display_act(self.act)
 
         return self.act
+
+    def reset_values(self):
+        self.act.accel = 0
+        self.act.brake = 0
+        self.act.gas = 0.5
+        self.clutch = 0
+        self.gear = 1
+        self.steer = 0
+        self.focus = [-90, -45, 0, 45, 90]
+        self.meta = 0

@@ -6,7 +6,7 @@ class Action:
         """An action is the instructions sent to the car"""
         self.accel = 0.2
         self.brake = 0
-        self.gas = 0
+        self.gas = 0.5
         self.clutch = 0
         self.gear = 1
         self.steer = 0
@@ -40,28 +40,28 @@ class Action:
         """Set the values specified with a numpy array"""
         i = 0
         if accel:
-            self.accel = act[0][i]
+            self.accel = act[i]
             i += 1
         if brake:
-            self.brake = act[0][i]
+            self.brake = act[i]
             i += 1
         if gas:
-            self.gas = act[0][i]
+            self.gas = act[i]
             i += 1
         if clutch:
-            self.clutch = act[0][i]
+            self.clutch = act[i]
             i += 1
         if gear:
-            self.gear = act[0][i]
+            self.gear = act[i]
             i += 1
         if steer:
-            self.steer = act[0][i]
+            self.steer = act[i]
             i += 1
         if focus:
-            self.focus = act[0][i]
+            self.focus = act[i]
             i += 1
         if meta:
-            self.meta = act[0][i]
+            self.meta = act[i]
             i += 1
 
     def normalize_act(self):

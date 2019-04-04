@@ -17,7 +17,7 @@ sensor_count = 29
 action_count = 3
 
 # Number of demonstations that the expert preforms
-expert_demonstration_count = 3
+expert_demonstration_count = 1
 
 # Episode count of dagger step
 dagger_episode_count = 20
@@ -61,6 +61,9 @@ for episode in range(expert_demonstration_count):
     # Start torcs
     env = gym.TorcsEnv(manual=manual_reset)
 
+    # Reset the expert
+    expert.reset_values()
+
     # Observations and actions for this iteration are stored here
     observation_list = []
     action_list = []
@@ -75,7 +78,7 @@ for episode in range(expert_demonstration_count):
             obs = env.obs
 
         # Get the action from the expert
-        act = expert.get_expert_act(act, obs)
+        act = expert.get_expert_act(obs)
 
         # Normalize the observation and add it to list of observations
         obs.normalize_obs()
@@ -110,7 +113,7 @@ for episode in range(expert_demonstration_count):
             action_made, (1, action_count))], axis=0)
 
 # Create the learning agent
-model = agent.Agent(name='model', input_num=observations_all[0].size,
+model = agent.Agent(input_num=observations_all[0].size,
                     output_num=actions_all[0].size)
 
 # Train the model with the observations and actions availiable
@@ -141,7 +144,7 @@ for episode in range(dagger_episode_count):
             break
 
         # Get the action that the expert would take
-        new_act = expert.get_expert_act(act, obs)
+        new_act = expert.get_expert_act(obs)
         new_act.normalize_act()
         new_act_list = new_act.get_act(gas=True,
                                        gear=True,
