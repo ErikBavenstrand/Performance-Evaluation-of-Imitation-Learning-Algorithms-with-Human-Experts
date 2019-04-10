@@ -215,7 +215,7 @@ class Client():
 
     def shutdown(self):
         if not self.so: return
-        print(("Race terminated or %d steps elapsed. Shutting down." % self.maxSteps))
+        print("Race terminated or %f steps elapsed. Shutting down." % self.maxSteps)
         self.so.close()
         self.so= None
         #sys.exit() # No need for this really.

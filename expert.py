@@ -21,7 +21,7 @@ class Expert:
         else:
             return v
 
-    def get_expert_act(self, obs):
+    def get_expert_act(self, obs, display=True):
         """Get the action that the expert would preform"""
         # If expert is human or simple algorithm
         if self.automatic:
@@ -50,7 +50,7 @@ class Expert:
             if self.interface.steering_wheel:
                 steering_wheel = self.interface.get_steering_wheel_state()
                 self.act.accel = (steering_wheel.throttle * -1)
-                self.act.brake = (steering_wheel.brake * -2)
+                self.act.brake = (steering_wheel.brake * -1)
                 self.act.steer = steering_wheel.steer * -1
 
                 if steering_wheel.shift_up and self.prev_shift_up is False:
@@ -104,8 +104,9 @@ class Expert:
         self.act.steer = self.__clip(self.act.steer, -1, 1)
         self.act.gas = (self.act.accel / 2) - (self.act.brake / 2) + 0.5
 
-        # Display the values on the interface
-        self.interface.display_act(self.act)
+        if display:
+            # Display the values on the interface
+            self.interface.display_act(self.act)
 
         return self.act
 
@@ -113,8 +114,8 @@ class Expert:
         self.act.accel = 0
         self.act.brake = 0
         self.act.gas = 0.5
-        self.clutch = 0
-        self.gear = 1
+        self.act.clutch = 0
+        self.act.gear = 1
         self.steer = 0
-        self.focus = [-90, -45, 0, 45, 90]
-        self.meta = 0
+        self.act.focus = [-90, -45, 0, 45, 90]
+        self.act.meta = 0

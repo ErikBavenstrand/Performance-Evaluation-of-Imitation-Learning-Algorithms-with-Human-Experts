@@ -52,6 +52,10 @@ class Interface:
                     return True
         return False
 
+    def check_steering_key(self, button):
+        pygame.event.pump()
+        return bool(self.steering_wheel.get_button(button))
+
     def get_key_state(self):
         """Get states of all important keys"""
         for event in pygame.event.get():
@@ -102,8 +106,6 @@ class Interface:
         gear = "GEAR: " + str(act.gear)
         steer = "STEER: " + str(act.steer)
 
-        self.screen.fill((0, 0, 0))
-
         accel, rect_accel = self.font.render(accel, (255, 255, 255))
         brake, rect_brake = self.font.render(brake, (255, 255, 255))
         gear, rect_gear = self.font.render(gear, (255, 255, 255))
@@ -113,4 +115,9 @@ class Interface:
         self.screen.blit(brake, (10, rect_brake[1] + 20))
         self.screen.blit(gear, (10, 2 * rect_gear[1] + 30))
         self.screen.blit(steer, (10, 3 * rect_steer[1] + 40))
+        pygame.display.flip()
+
+    def display_background_color(self, color):
+        """Fill the background with a solid color"""
+        self.screen.fill(color)
         pygame.display.flip()

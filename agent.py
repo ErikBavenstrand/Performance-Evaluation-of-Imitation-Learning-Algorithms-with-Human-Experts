@@ -28,7 +28,9 @@ class Agent(object):
             h0 = Dense(29, activation="sigmoid")(S)
             h1 = Dense(29, activation="sigmoid")(h0)
             h2 = Dense(29, activation="sigmoid")(h1)
-            V = Dense(self.output_num, activation="sigmoid")(h2)
+            h3 = Dense(29, activation="sigmoid")(h2)
+            h4 = Dense(29, activation="sigmoid")(h3)
+            V = Dense(self.output_num, activation="sigmoid")(h4)
             model = Model(inputs=S, outputs=V)
             model.compile(optimizer="adam", loss='mse')
             self.models.append(model)
@@ -53,14 +55,12 @@ class Agent(object):
 
     def _activation_function(self, arr):
         """Activation function for array"""
-        for i in range(len(arr)):
-            for j in range(len(arr[i])):
-                arr[i][j] = self._sigmoid(arr[i][j])
+        arr = self._sigmoid(arr)
         return arr
 
     def _sigmoid(self, x):
         """Sigmoid function for a single value"""
-        return 1 / (1 + np.e ** -x)
+        return 1 / (1 + np.exp(-x))
 
     def train(self, x, y, n_epoch=100, batch=32):
         """Train the network"""
@@ -77,4 +77,29 @@ class Agent(object):
                 z = np.matmul(z, self.weights[i][j]) + self.biases[i][j]
                 z = self._activation_function(z)
             result = np.concatenate((result, z))
+        return result
+
+    def predict_slow(self, x):
+        return self.models[0].predict(x)
+
+    def mean_of_prediction(self, prediction):
+        """Computes the mean of a prediction"""
+        result = []
+        for j in range(len(prediction[0])):
+            total_sum = 0
+            for i in range(len(prediction)):
+                total_sum += prediction[i][j]
+            result.append(total_sum / len(prediction))
+        return [result]
+
+    def covariance_of_prediction(self, prediction, mean):
+        cov = np.zeros(shape=prediction.shape)
+        for i in range(len(prediction)):
+            cov[i] = prediction[i] - mean
+        cov_t = np.transpose(cov)
+        cov = np.dot(cov_t, cov)
+        diag = np.zeros(shape=[len(cov)])
+        for i in range(len(cov)):
+            diag[i] = cov[i][i]
+        result = np.linalg.norm(diag)
         return result
