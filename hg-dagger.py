@@ -24,7 +24,7 @@ episode_count = 10
 steps = 4000
 
 # Number of epochs
-epoch_count = 100
+epoch_count = 10000
 
 # Batch size
 batch_size = 32

@@ -3,6 +3,9 @@ from tensorflow.python.keras.backend import set_learning_phase
 from tensorflow.python.keras.layers import Dense
 from tensorflow.python.keras.layers import Concatenate
 from tensorflow.python.keras import Model
+from tensorflow.python.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.models import load_model
 import numpy as np
 
 
@@ -25,12 +28,9 @@ class Agent(object):
         for i in range(self.ensemble_count):
             # Change the network structure here
             S = Input(shape=[self.input_num])
-            h0 = Dense(29, activation="sigmoid")(S)
-            h1 = Dense(29, activation="sigmoid")(h0)
-            h2 = Dense(29, activation="sigmoid")(h1)
-            h3 = Dense(29, activation="sigmoid")(h2)
-            h4 = Dense(29, activation="sigmoid")(h3)
-            V = Dense(self.output_num, activation="sigmoid")(h4)
+            h0 = Dense(256, activation="relu")(S)
+            h1 = Dense(128, activation="relu")(h0)
+            V = Dense(self.output_num, activation="relu")(h1)
             model = Model(inputs=S, outputs=V)
             model.compile(optimizer="adam", loss='mse')
             self.models.append(model)
@@ -55,17 +55,24 @@ class Agent(object):
 
     def _activation_function(self, arr):
         """Activation function for array"""
-        arr = self._sigmoid(arr)
+        arr = self._relu(arr)
         return arr
 
     def _sigmoid(self, x):
         """Sigmoid function for a single value"""
         return 1 / (1 + np.exp(-x))
 
-    def train(self, x, y, n_epoch=100, batch=32):
+    def _relu(self, x):
+        return np.maximum(0, x)
+
+    def train(self, x, y, n_epoch=10000, batch=32):
         """Train the network"""
+        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
         for i in range(len(self.models)):
-            self.models[i].fit(x=x, y=y, epochs=n_epoch, batch_size=batch)
+            mc = ModelCheckpoint('best_model_' + str(i) + '.h5', monitor='val_loss', mode='min', verbose=1, save_best_only=True)
+            self.models[i].fit(x=x, y=y, epochs=n_epoch, batch_size=batch, validation_split=0.2, verbose=1, callbacks=[es, mc])
+        for i in range(len(self.models)):
+            self.models[i] = load_model('best_model_' + str(i) + '.h5')
         self._store_weights()
 
     def predict(self, x):

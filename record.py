@@ -19,7 +19,7 @@ action_count = 3
 episode_count = 2
 
 # Number of steps per iteration
-steps = 5000
+steps = 35000
 
 # If track selection is done manually
 manual_reset = True
@@ -31,8 +31,8 @@ using_steering_wheel = True
 automatic = False
 
 # file path
-folder = "./demonstrations/"
-name = "Street_1"
+folder = "./demonstrations-long/"
+name = "E_Track_2"
 
 # All observations and their corresponding actions are stored here
 observations_all = np.zeros((0, sensor_count))

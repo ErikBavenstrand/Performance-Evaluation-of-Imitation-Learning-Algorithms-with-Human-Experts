@@ -1,3 +1,8 @@
+
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import pickle
 import pygame
 import numpy as np
@@ -11,28 +16,28 @@ import action
 # DEFINES AND INITIALIZATIONS
 # ----------------------------------------------------------------------------
 # Number of sensors in observations
-sensor_count = 65
+sensor_count = 12
 
 # Number of availiable actions
 action_count = 3
 
 # Number of demonstations that the expert preforms
-expert_demonstration_count = 3
+expert_demonstration_count = 1
 
 # Number of episodes the agent should run
-agent_episode_count = 20
+agent_episode_count = 1
 
 # Number of steps per expert iteration
-expert_steps = 4000
+expert_steps = 5000
 
 # Number of steps per agent iteration
-agent_steps = 4000
+agent_steps = 5000
 
 # Number of epochs
-epoch_count = 100
+epoch_count = 10000
 
 # Batch size
-batch_size = 32
+batch_size = 16
 
 # If track selection is done manually
 manual_reset = False
@@ -41,13 +46,7 @@ manual_reset = False
 using_steering_wheel = True
 
 # FILL HERE IF AUTOMATIC DRIVING
-automatic = True
-
-# Use existing demonstrations
-use_demonstrations = True
-demonstrations_folder = "./demonstrations/"
-demonstrations = ["CG_Speedway_number_1", "CG_track_2", "CG_track_3",
-                  "Ruudskogen", "Spring"]
+automatic = False
 
 # All observations and their corresponding actions are stored here
 observations_all = np.zeros((0, sensor_count))
@@ -59,18 +58,10 @@ interface = interface.Interface(using_steering_wheel)
 # Create the expert
 expert = expert.Expert(interface, automatic=automatic)
 
-if use_demonstrations:
-    for demonstration in demonstrations:
-        print(demonstration)
-        in_file = open(demonstrations_folder + demonstration, "rb")
-        observation_list = pickle.load(in_file)
-        action_list = pickle.load(in_file)
-        in_file.close()
-        observations_all = np.concatenate((observations_all, observation_list),
-                                          axis=0)
-        actions_all = np.concatenate((actions_all, action_list), axis=0)
-
-else:
+# Create the learning agent
+model = agent.Agent(input_num=observations_all.shape[1],
+                    output_num=actions_all.shape[1])
+for run in range(1000):
     # EXPERT DEMONSTRATION
     # ----------------------------------------------------------------------------
     print("Expert Demonstration")
@@ -95,13 +86,13 @@ else:
                 obs = env.obs
 
             # Get the action from the expert
-            act = expert.get_expert_act(act, obs)
+            act = expert.get_expert_act(obs, display=False)
 
             # Normalize the observation and add it to list of observations
             obs.normalize_obs()
             obs_list = obs.get_obs(angle=True, gear=True, rpm=True,
-                                   speedX=True, speedY=True, track=True,
-                                   trackPos=True, wheelSpinVel=True)
+                                   speedX=True, track=True, trackIndex=[0, 2, 4, 9, 14, 16, 18])
+
             observation_list.append(obs_list)
 
             # Normalize the act and add it to list of actions
@@ -119,58 +110,46 @@ else:
 
         # ----------------------------------------------------------------------------
         # Summarizing the demonstration
-        print('Packing expert data into arrays...')
-        for observation, action_made in zip(observation_list, action_list):
-            # Concatenate all observations into array of arrays
-            observations_all = np.concatenate([observations_all, np.reshape(
-                observation, (1, sensor_count))], axis=0)
+        observations_all = np.concatenate((observations_all, observation_list),
+                                        axis=0)
+        actions_all = np.concatenate((actions_all, action_list), axis=0)
 
-            # Concatenate all actions into array of arrays
-            actions_all = np.concatenate([actions_all, np.reshape(
-                action_made, (1, action_count))], axis=0)
+        # Train the model with the observations and actions availiable
+        model.train(observations_all, actions_all, n_epoch=epoch_count,
+                    batch=batch_size)
 
-# Create the learning agent
-model = agent.Agent(input_num=observations_all[0].size,
-                    output_num=actions_all[0].size)
+    # ANN RUNNING STEP
+    # ----------------------------------------------------------------------------
+    # Run the agent
+    for episode in range(agent_episode_count):
+        # Restart the game for every iteration
+        env = gym.TorcsEnv(manual=manual_reset)
 
-# Train the model with the observations and actions availiable
-model.train(observations_all, actions_all, n_epoch=epoch_count,
-            batch=batch_size)
+        print("#" * 100)
+        print("# Episode: %d start" % episode)
+        for i in range(agent_steps):
+            # If first iteration, get observation and action
+            if i == 0:
+                act = env.act
+                obs = env.obs
 
+            # If quit key is pressed, prematurely end this run
+            if interface.check_key(pygame.KEYDOWN, pygame.K_q):
+                break
 
-# ANN RUNNING STEP
-# ----------------------------------------------------------------------------
-# Run the agent
-for episode in range(agent_episode_count):
-    # Restart the game for every iteration
-    env = gym.TorcsEnv(manual=manual_reset)
+            # Normalize the observation and add it to list of observations
+            obs.normalize_obs()
+            obs_list = obs.get_obs(angle=True, gear=True, rpm=True,
+                                   speedX=True, track=True, trackIndex=[0, 2, 4, 9, 14, 16, 18])
 
-    print("#" * 100)
-    print("# Episode: %d start" % episode)
-    for i in range(agent_steps):
-        # If first iteration, get observation and action
-        if i == 0:
-            act = env.act
-            obs = env.obs
+            # Normalize the act and add it to list of actions
+            # Important to un-normalize the act before sending it to torcs
+            act_list = model.predict_slow(np.reshape(obs_list, (1, sensor_count)))
+            act.set_act(act_list[0], gas=True, gear=True, steer=True)
+            act.un_normalize_act()
 
-        # If quit key is pressed, prematurely end this run
-        if interface.check_key(pygame.KEYDOWN, pygame.K_q):
-            break
+            # Execute the action and get the new observation
+            obs = env.step(act)
 
-        # Normalize the observation and add it to list of observations
-        obs.normalize_obs()
-        obs_list = obs.get_obs(angle=True, gear=True, opponents=True, rpm=True,
-                               speedX=True, speedY=True,  track=True,
-                               trackPos=True, wheelSpinVel=True)
-
-        # Normalize the act and add it to list of actions
-        # Important to un-normalize the act before sending it to torcs
-        act_list = model.predict(np.reshape(obs_list, (1, sensor_count)))
-        act.set_act(act_list[0], gas=True, gear=True, steer=True)
-        act.un_normalize_act()
-
-        # Execute the action and get the new observation
-        obs = env.step(act)
-
-    # Exit torcs
-    env.end()
+        # Exit torcs
+        env.end()

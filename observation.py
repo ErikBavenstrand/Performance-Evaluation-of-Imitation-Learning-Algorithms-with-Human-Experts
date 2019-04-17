@@ -81,6 +81,7 @@ class Observation:
                 distFromStart=None, distRaced=None, fuel=None,
                 gear=None, lastLapTime=None, opponents=None, racePos=None,
                 rpm=None, speedX=None, speedY=None, speedZ=None, track=None,
+                trackIndex=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
                 trackPos=None, wheelSpinVel=None, z=None, focus=None, x=None,
                 y=None, roll=None, pitch=None, yaw=None, speedGlobalX=None,
                 speedGlobalY=None):
@@ -115,7 +116,8 @@ class Observation:
         if speedZ:
             obs = np.append(obs, self.speedZ)
         if track:
-            obs = np.append(obs, self.track)
+            for index in trackIndex:
+                obs = np.append(obs, self.track[index])
         if trackPos:
             obs = np.append(obs, self.trackPos)
         if wheelSpinVel:

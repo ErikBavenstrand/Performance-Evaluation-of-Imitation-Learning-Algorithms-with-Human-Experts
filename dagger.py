@@ -32,7 +32,7 @@ dagger_steps = 4000
 epoch_count = 100
 
 # Batch size
-batch_size = 32
+batch_size = 16
 
 # If track selection is done manually
 manual_reset = False

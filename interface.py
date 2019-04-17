@@ -117,7 +117,8 @@ class Interface:
         self.screen.blit(steer, (10, 3 * rect_steer[1] + 40))
         pygame.display.flip()
 
-    def display_background_color(self, color):
+    def display_background_color(self, color, flip=True):
         """Fill the background with a solid color"""
         self.screen.fill(color)
-        pygame.display.flip()
+        if flip:
+            pygame.display.flip()

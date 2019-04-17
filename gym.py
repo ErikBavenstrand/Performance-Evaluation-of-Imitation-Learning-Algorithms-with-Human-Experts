@@ -70,7 +70,7 @@ class TorcsEnv:
         """Close torcs and run manual setup script"""
         os.system('pkill torcs')
         time.sleep(0.5)
-        os.system('torcs &')
+        os.system('torcs -nodamage &')
         time.sleep(0.5)
         os.system('sh ./scripts/manualstart.sh')
         time.sleep(0.5)
