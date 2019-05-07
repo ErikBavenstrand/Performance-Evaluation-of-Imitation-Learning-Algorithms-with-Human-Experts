@@ -67,21 +67,20 @@ class Action:
     def normalize_act(self):
         """Normalize action values to be between 0 and 1"""
         self.gas = (self.accel / 2) - (self.brake / 2) + 0.5
-        self.gear = (self.gear + 1) / 7
         self.steer = (self.steer + 1) / 2
 
     def un_normalize_act(self):
         """Un-normalize action values to be betwen their original values"""
         if self.gas == 0.5:
             self.accel = 0
-            self.accel = 0
-        if self.gas > 0.5:
+            self.brake = 0
+        elif self.gas > 0.5:
             self.accel = (self.gas - 0.5) * 2
             self.brake = 0
         elif self.gas < 0.5:
             self.brake = (0.5 - self.gas) * 2
             self.accel = 0
-        self.gear = int(round((self.gear * 7) - 1))
+        
         self.steer = (self.steer * 2) - 1
 
     def copy(self, act):

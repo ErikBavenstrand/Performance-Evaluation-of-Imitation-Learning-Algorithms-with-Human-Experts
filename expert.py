@@ -27,24 +27,14 @@ class Expert:
         if self.automatic:
             target_speed = 100
             self.act.steer = obs.angle * 10 / defines.PI
-            self.act.steer -= obs.trackPos * .10
+            self.act.steer -= obs.trackPos * .40
             if obs.speedX < target_speed - (self.act.steer * 50):
                 self.act.accel += .01
             else:
                 self.act.accel -= .01
             if obs.speedX < 10:
                 self.act.accel += 1 / (obs.speedX + .1)
-            self.act.gear = 1
-            if obs.speedX > 50:
-                self.act.gear = 2
-            if obs.speedX > 80:
-                self.act.gear = 3
-            if obs.speedX > 110:
-                self.act.gear = 4
-            if obs.speedX > 140:
-                self.act.gear = 5
-            if obs.speedX > 170:
-                self.act.gear = 6
+            
         else:
             # If human is using steering wheel or keyboard
             if self.interface.steering_wheel:
@@ -52,7 +42,7 @@ class Expert:
                 self.act.accel = (steering_wheel.throttle * -1)
                 self.act.brake = (steering_wheel.brake * -1)
                 self.act.steer = steering_wheel.steer * -1
-                
+                """
                 if steering_wheel.shift_up and self.prev_shift_up is False:
                     self.act.gear += 1
                     self.prev_shift_up = True
@@ -64,7 +54,7 @@ class Expert:
                     self.prev_shift_down = True
                 elif steering_wheel.shift_down is False:
                     self.prev_shift_down = False
-                
+                """
 
 
             else:
@@ -86,7 +76,7 @@ class Expert:
                     self.act.steer -= .05
                 else:
                     self.act.steer = 0
-
+                """
                 if key.shift_up and self.prev_shift_up is False:
                     self.act.gear += 1
                     self.prev_shift_up = True
@@ -98,6 +88,7 @@ class Expert:
                     self.prev_shift_down = True
                 elif key.shift_down is False:
                     self.prev_shift_down = False
+                """
 
         # Make sure the values are valid
         self.act.accel = self.__clip(self.act.accel, 0, 1)
@@ -110,7 +101,7 @@ class Expert:
             # Display the values on the interface
             self.interface.display_background_color((0, 0, 0), flip=flip)
             self.interface.display_act(self.act)
-
+        
         return self.act
 
     def reset_values(self):

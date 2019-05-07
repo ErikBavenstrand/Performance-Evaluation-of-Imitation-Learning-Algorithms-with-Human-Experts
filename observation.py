@@ -63,14 +63,14 @@ class Observation:
 
     def normalize_obs(self):
         """Normalizes the values of the observation to between 0 and 1"""
-        self.angle = (self.angle + defines.PI) / (2 * defines.PI)
+        self.angle = ((self.angle / defines.PI) + 1) / 2
         self.damage = self.damage / 10000
         self.focus = [sensor / 200 for sensor in self.focus]
         self.fuel = self.fuel / 100
         self.gear = (self.gear + 1) / 7
         self.opponents = [opponent / 200 for opponent in self.opponents]
         self.rpm = self.rpm / 10000
-        self.speedX = (self.speedX + 300) / 600
+        self.speedX = self.speedX / 300
         self.speedY = (self.speedX + 300) / 600
         self.speedZ = (self.speedZ + 300) / 600
         self.track = [(sensor / 200) + 0.005 for sensor in self.track]

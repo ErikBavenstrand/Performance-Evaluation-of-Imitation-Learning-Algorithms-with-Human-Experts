@@ -3,3 +3,5 @@ torcs/
 .vscode/
 *.pyc
 __pycache__/
+demonstrations/
+models/

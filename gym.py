@@ -23,8 +23,55 @@ class TorcsEnv:
         self.obs.update_obs(self.client.S.d)
         self.act = action.Action()
         self.PI = 3.14159265359
+        self.tick = 50
 
-    def step(self, act):
+    def step(self, act, obs, auto_transmission=True):
+        if auto_transmission:
+            speed = obs.speedX
+            rpm = obs.rpm
+            act.gear = obs.gear
+
+            """
+            speed = obs.speedX * 300
+            rpm = obs.rpm * 10000
+            act.gear = int(round(((obs.gear * 7) - 1)))
+            """
+            if self.tick == 50:
+                if act.gear == -1:
+                    act.gear = 1
+                elif act.gear == 0:
+                    act.gear = 1
+                elif act.gear == 1:
+                    if rpm > 8500 or speed > 30:
+                        act.gear += 1
+                elif act.gear == 2:
+                    if rpm > 8900 or speed > 80:
+                        act.gear += 1
+                    elif rpm < 4000 or speed < 30:
+                        act.gear -= 1
+                elif act.gear == 3:
+                    if rpm > 9000 or speed > 130:
+                        act.gear += 1
+                    elif rpm < 6000 or speed < 80:
+                        act.gear -= 1
+                elif act.gear == 4:
+                    if rpm > 9000 or speed > 180:
+                        act.gear += 1
+                    elif rpm < 7000 or speed < 130:
+                        act.gear -= 1
+                elif act.gear == 5:
+                    if rpm > 9000 or speed > 230:
+                        act.gear += 1
+                    elif rpm < 7500 or speed < 180:
+                        act.gear -= 1
+                elif act.gear == 6:
+                    if rpm < 8000 or speed < 230:
+                        act.gear -= 1
+            self.tick -= 1
+            if self.tick == 0:
+                self.tick = 50
+            
+
         """Preforms a single action and returns the reply by torcs"""
         self.client.R.d['accel'] = act.accel
         self.client.R.d['brake'] = act.brake
@@ -36,6 +83,7 @@ class TorcsEnv:
         self.client.respond_to_server()
         self.client.get_servers_input()
         self.obs.update_obs(self.client.S.d)
+
         return self.obs
 
     def reset(self, manual=False):
