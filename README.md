@@ -15,7 +15,7 @@ The project aimed to evaluate the difference in performance of three different i
 We found that HG-DAGGER was the best option by far, when using a human expert. More about the conclusion and further discussions can be found in the [thesis](Performance_Evaluation_of_Imitation_Learning_Algorithms_with_Human_Experts.pdf).
 
 <p align="center">
-  <img src="./images/1.png" />
+  <img src="./images/1.gif" />
 </p>
 
 ## Usage example
